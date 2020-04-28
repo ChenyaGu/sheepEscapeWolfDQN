@@ -14,19 +14,19 @@ def computeDistance(position1, position2):
     return distance
 
 
-class InitialPosition():
+class InitialPosition:
     def __init__(self, movingRange, minDistanceEachOther, maxDistanceEachOther, minDistanceWolfSheep):
         self.movingRange = movingRange
         self.minDistanceEachOther = minDistanceEachOther
         self.maxDistanceEachOther = maxDistanceEachOther
         self.minDistanceWolfSheep = minDistanceWolfSheep
+        self.totalNum = 100000
 
     def __call__(self, numberObjects):
         positionList = [samplePosition(self.movingRange) for i in range(numberObjects)]
         pairList = list(it.combinations(range(numberObjects), 2))
-        cenPosition = [(self.movingRange[0] + self.movingRange[2]) / 2, (self.movingRange[1] + self.movingRange[3]) / 2]
         sampleCount = 1
-        while sampleCount < 100000:
+        while sampleCount < self.totalNum:
             distanceEachOtherArray = np.array([computeDistance(positionList[index[0]], positionList[index[1]]) for index in pairList])
             distanceWolfSheep = computeDistance(positionList[0], positionList[1])
             if (distanceWolfSheep > self.minDistanceWolfSheep) \
@@ -36,10 +36,11 @@ class InitialPosition():
             else:
                 positionList = [samplePosition(self.movingRange) for i in range(numberObjects)]
                 sampleCount = sampleCount + 1
-        if sampleCount == 100000:
+        if sampleCount == self.totalNum:
             print("unable to initial correct positionList")
             return False
         else:
+            print(sampleCount)
             return positionList
 
 # movingRange = [0, 0, 364, 364]
