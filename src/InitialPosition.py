@@ -10,7 +10,8 @@ def samplePosition(positionRange):
 
 
 def computeDistance(position1, position2):
-    distance = np.sqrt(np.sum(np.power(np.array(position1) - np.array(position2), 2)))
+    diff = np.asarray(position1) - np.asarray(position2)
+    distance = np.linalg.norm(diff)
     return distance
 
 
@@ -27,7 +28,8 @@ class InitialPosition:
         pairList = list(it.combinations(range(numberObjects), 2))
         sampleCount = 1
         while sampleCount < self.totalNum:
-            distanceEachOtherArray = np.array([computeDistance(positionList[index[0]], positionList[index[1]]) for index in pairList])
+            distanceEachOtherArray = np.array(
+                [computeDistance(positionList[index[0]], positionList[index[1]]) for index in pairList])
             distanceWolfSheep = computeDistance(positionList[0], positionList[1])
             if (distanceWolfSheep > self.minDistanceWolfSheep) \
                     & np.all(distanceEachOtherArray > self.minDistanceEachOther) \

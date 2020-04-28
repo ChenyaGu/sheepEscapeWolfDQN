@@ -15,7 +15,6 @@ class SelectAction:
         self.actionSize = actionSize
         self.model =
         self.epsilon = 0.05
-
     def __call__(self, currentState):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.actionSize)
@@ -28,39 +27,26 @@ class Transition:
     def __init__(self, movingRange, speedList):
         self.movingRange = movingRange
         self.speedList = speedList
-
     def __call__(self, currentStates, currentActions):
-        currentPositions = currentStates.loc[:][[
-            'positionX', 'positionY']].values
-        currentVelocities = currentStates.loc[:][[
-            'velocityX', 'velocityY']].values
+        currentPositions = currentStates.loc[:][['positionX', 'positionY']].values
+        currentVelocities = currentStates.loc[:][['velocityX', 'velocityY']].values
         numberObjects = len(currentStates.index)
-
         newVelocities = [renormalVector(np.add(currentVelocities[i], np.divide(
             currentActions[i], 2.0)), self.speedList[i]) for i in range(numberObjects)]
         newPositions = [np.add(currentPositions[i], newVelocities[i])
                         for i in range(numberObjects)]
-
         for i in range(numberObjects):
             if newPositions[i][0] > self.movingRange[2]:
-                newPositions[i][0] = 2 * \
-                                     self.movingRange[2] - newPositions[i][0]
+                newPositions[i][0] = 2 * self.movingRange[2] - newPositions[i][0]
             if newPositions[i][0] < self.movingRange[0]:
-                newPositions[i][0] = 2 * \
-                                     self.movingRange[0] - newPositions[i][0]
+                newPositions[i][0] = 2 * self.movingRange[0] - newPositions[i][0]
             if newPositions[i][1] > self.movingRange[3]:
-                newPositions[i][1] = 2 * \
-                                     self.movingRange[3] - newPositions[i][1]
+                newPositions[i][1] = 2 * self.movingRange[3] - newPositions[i][1]
             if newPositions[i][1] < self.movingRange[1]:
-                newPositions[i][1] = 2 * \
-                                     self.movingRange[1] - newPositions[i][1]
-
-        newVelocities = [newPositions[i] - currentPositions[i]
-                         for i in range(numberObjects)]
-        newStatesList = [list(newPositions[i]) + list(newVelocities[i])
-                         for i in range(numberObjects)]
-        newStates = pd.DataFrame(
-            newStatesList, index=currentStates.index, columns=currentStates.columns)
+                newPositions[i][1] = 2 * self.movingRange[1] - newPositions[i][1]
+        newVelocities = [newPositions[i] - currentPositions[i] for i in range(numberObjects)]
+        newStatesList = [list(newPositions[i]) + list(newVelocities[i]) for i in range(numberObjects)]
+        newStates = pd.DataFrame(newStatesList, index=currentStates.index, columns=currentStates.columns)
         return newStates
 
 
