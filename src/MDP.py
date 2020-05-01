@@ -82,6 +82,7 @@ def isEnd(state):
 #     currentActions = [[0, 3], [0, 3], [3, 0]]
 #     transState = Transition(movingRange, speedList)
 #     newStates = transState(currentStates, currentActions)
+#     memory = deque(maxlen=20000)
 #     print(currentStates)
 #     print(currentActions)
 #     print(newStates)
