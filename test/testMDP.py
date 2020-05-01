@@ -6,9 +6,11 @@ from src.MDP import *
 @ddt
 class TestMDP(unittest.TestCase):
     def setUp(self):
+        self.sheepId = 0
+        self.wolfId = 1
         self.stateSize = stateSize
         self.actionSize = actionSize
-        self.model =
+        self.model = model
         self.epsilon = 0.05
 
     @data(([0, 0], [1, 1], 2 ** 0.5),
@@ -25,15 +27,18 @@ class TestMDP(unittest.TestCase):
           ([1, -1], [-1, 1], 8 ** 0.5))
     @unpack
     def testTransition(self, p1, p2, groundTruthDis):
+        # pass?
 
 
     @data(([0, 0], [1, 1], 2 ** 0.5),
           ([1, -1], [-1, 1], 8 ** 0.5))
     @unpack
     def testReward(self, p1, p2, groundTruthDis):
+        # pass?
 
 
-    @data(([0, 0], [1, 1], 2 ** 0.5),
-      ([1, -1], [-1, 1], 8 ** 0.5))
+    @data((([0, 0], [1, 1]), 2 ** 0.5),
+         (([0, 0], [1, 1]), 8 ** 0.5))
     @unpack
     def testIsEnd(self, p1, p2, groundTruthDis):
+        # pass?

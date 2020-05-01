@@ -11,23 +11,26 @@ def renormalVector(rawVector, targetLength):
 
 
 class SelectAction:
-    def __init__(self, stateSize, actionSize):
+    def __init__(self, stateSize, actionSize, model, epsilon):
         self.stateSize = stateSize
         self.actionSize = actionSize
-        self.model =
-        self.epsilon = 0.05
+        self.model = model
+        self.epsilon = epsilon
+
     def __call__(self, currentState):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.actionSize)
-        actionValues = self.model.predict(currentState)
-        action = np.argmax(actionValues[0])
-        return action
+        else:
+            actionValues = self.model.predict(currentState)
+            action = np.argmax(actionValues[0])
+            return action
 
 
 class Transition:
     def __init__(self, movingRange, speedList):
         self.movingRange = movingRange
         self.speedList = speedList
+
     def __call__(self, currentState, currentAction):
         currentPositions = currentState.loc[:][['positionX', 'positionY']].values
         currentVelocity = currentState.loc[:][['velocityX', 'velocityY']].values
@@ -54,24 +57,26 @@ class Reward:
     def __init__(self, movingRange, speedList):
         self.movingRange = movingRange
         self.speedList = speedList
-    def __call__(self, currentStates, currentActions):
 
-    def sum_rewards(s=(), a=(), s_n=(), func_lst=[], terminals=()):
-            if s in terminals:
-                return 0
-            reward = sum(f(s, a, s_n) for f in func_lst)
-            return reward
+    def __call__(self, state, sheepID, wolfID, minDis):
+        isEnd = IsEnd(state, sheepID, wolfID)
+        if isEnd(minDis):
+            return -100
 
 
-def isEnd(state):
-    agent_state = state[:4]
-    wolf_state = state[4:8]
-    agent_coordinates = agent_state[:2]
-    wolf_coordinates = wolf_state[:2]
-    if computeDistance(agent_coordinates, wolf_coordinates) <= 30:
-        return True
-    return False
+class IsEnd:
+    def __init__(self, state, sheepID, wolfID):
+        self.state = state
+        self.sheepID = sheepID
+        self.wolfID = wolfID
 
+    def __call__(self, minDis):
+        sheepCoordinates = self.state(self.sheepID)
+        wolfCoordinates = self.state(self.wolfID)
+        if computeDistance(sheepCoordinates, wolfCoordinates) <= minDis:
+            return True
+        else:
+            return False
 
 # if __name__ == "__main__":
 #     movingRange = [0, 0, 15, 15]
@@ -89,7 +94,5 @@ def isEnd(state):
 #     print(renormalVector((5, 5), 8))
 
 
-
-
-
 #     minibatch = random.sample(memory, batch_size)
+
