@@ -87,3 +87,9 @@ def isEnd(state):
 #     print(currentActions)
 #     print(newStates)
 #     print(renormalVector((5, 5), 8))
+
+
+
+
+
+#     minibatch = random.sample(memory, batch_size)
