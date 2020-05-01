@@ -10,7 +10,9 @@ class TestInitPos(unittest.TestCase):
         self.minDistanceEachOther = 50
         self.maxDistanceEachOther = 180
         self.minDistanceWolfSheep = 120
-        self.numberObjects = 6
+        self.objectNum = 6
+        self.sheepId = 0
+        self.wolfId = 1
 
     @data(([0, 0], [1, 1], 2 ** 0.5),
           ([1, -1], [-1, 1], 8 ** 0.5))
@@ -27,8 +29,9 @@ class TestInitPos(unittest.TestCase):
         # pass
         initialPosition = InitialPosition(self.movingRange, self.minDistanceEachOther, self.maxDistanceEachOther,
                                           self.minDistanceWolfSheep)
-        positionList = initialPosition(self.numberObjects)
-        distance = computeDistance(positionList[0], positionList[1])
+        positionList = initialPosition(self.objectNum)
+
+        distance = computeDistance(positionList[self.sheepId], positionList[self.wolfId])
         truthValue = (distance > compareDis1) & (distance < compareDis2) & (distance > compareDis3)
         self.assertTrue(truthValue)
 
