@@ -4,7 +4,7 @@ import random
 from src.initialPosition import *
 
 
-def renormalVector(rawVector, targetLength):
+def normalizeVector(rawVector, targetLength):
     rawLength = np.linalg.norm(rawVector)
     changeRate = np.divide(targetLength, rawLength)
     return np.multiply(rawVector, changeRate)
@@ -19,7 +19,8 @@ class SelectAction:
 
     def __call__(self, currentState):
         if np.random.rand() <= self.epsilon:
-            return random.randrange(self.actionSize)
+            action = random.randrange(self.actionSize)
+            return action
         else:
             actionValues = self.model.predict(currentState)
             action = np.argmax(actionValues[0])
@@ -27,41 +28,71 @@ class SelectAction:
 
 
 class Transition:
-    def __init__(self, movingRange, speedList):
+    def __init__(self, movingRange, speedList, actionSize):
         self.movingRange = movingRange
         self.speedList = speedList
+        self.actionSize = actionSize
 
-    def __call__(self, currentState, currentAction):
-        currentPositions = currentState.loc[:][['positionX', 'positionY']].values
-        currentVelocity = currentState.loc[:][['velocityX', 'velocityY']].values
-        numberObjects = len(currentState.index)
-        newVelocity = [renormalVector(np.add(currentVelocity[i], np.divide(
-            currentAction[i], 2.0)), self.speedList[i]) for i in range(numberObjects)]
-        newPositions = [np.add(currentPositions[i], newVelocity[i]) for i in range(numberObjects)]
-        for i in range(numberObjects):
-            if newPositions[i][0] > self.movingRange[2]:
-                newPositions[i][0] = 2 * self.movingRange[2] - newPositions[i][0]
-            if newPositions[i][0] < self.movingRange[0]:
-                newPositions[i][0] = 2 * self.movingRange[0] - newPositions[i][0]
-            if newPositions[i][1] > self.movingRange[3]:
-                newPositions[i][1] = 2 * self.movingRange[3] - newPositions[i][1]
-            if newPositions[i][1] < self.movingRange[1]:
-                newPositions[i][1] = 2 * self.movingRange[1] - newPositions[i][1]
-        newVelocity = [newPositions[i] - currentPositions[i] for i in range(numberObjects)]
-        newStatesList = [list(newPositions[i]) + list(newVelocity[i]) for i in range(numberObjects)]
-        newStates = pd.DataFrame(newStatesList, index=currentState.index, columns=currentState.columns)
-        return newStates
+    def __call__(self, currentState, currentAction, currentVelocity, identity):
+        minX = 0
+        minY = 1
+        maxX = 2
+        maxY = 3
+        angleList = [i * (2 * np.pi / self.actionSize) for i in range(0, self.actionSize)]
+        actionList = [np.array((round(np.cos(actionAngles), 10), round(np.sin(actionAngles), 10)))
+                      for actionAngles in angleList]
+        currentPosition = np.array(currentState)
+        newVelocity = normalizeVector(np.add(currentVelocity, actionList[currentAction])
+                                      , self.speedList[identity])
+        newPosition = currentPosition + newVelocity
+        if newPosition[0] > self.movingRange[maxX]:
+            newPosition[0] = 2 * self.movingRange[maxX] - newPosition[0]
+        if newPosition[0] < self.movingRange[minX]:
+            newPosition[0] = 2 * self.movingRange[minX] - newPosition[0]
+        if newPosition[1] > self.movingRange[maxY]:
+            newPosition[1] = 2 * self.movingRange[maxY] - newPosition[1]
+        if newPosition[1] < self.movingRange[minY]:
+            newPosition[1] = 2 * self.movingRange[minY] - newPosition[1]
+        newVelocity = newPosition - currentPosition
+        print(newVelocity)
+        newState = newPosition
+        return newState
 
 
 class Reward:
-    def __init__(self, movingRange, speedList):
-        self.movingRange = movingRange
-        self.speedList = speedList
+    def __init__(self, sheepID, wolfID):
+        self.sheepID = sheepID
+        self.wolfID = wolfID
 
-    def __call__(self, state, sheepID, wolfID, minDis):
-        isEnd = IsEnd(state, sheepID, wolfID)
+    def __call__(self, state, belief, minDis):
+        endPunishment = -100
+        isEnd = IsEnd(state, self.sheepID, self.wolfID)
         if isEnd(minDis):
-            return -100
+            return endPunishment
+        else:
+            sheepPos = state[self.sheepID]
+            targetPosList = state[self.wolfID:]
+            distanceList = [computeDistance(sheepPos, target) for target in targetPosList]
+            subtletyList = [belief[i][1] for i in range(len(belief))]
+
+            def disReward(distance, subtlety, const=1):
+                reward = const * distance * subtlety
+                return reward
+
+            distanceReward = np.sum(
+                [disReward(distance, subtlety) for (distance, subtlety) in zip(distanceList, subtletyList)])
+
+            # def sigmoid(x, m=1, s=1):
+            #     ePower = np.exp(-s * x)
+            #     sigmoidValue = m / (1.0 + ePower)
+            #     return sigmoidValue
+            #
+            # def barrierPunish():
+            #     return
+            #
+            # barrierPunishment = barrierPunish()
+            # totalReward = distanceReward - barrierPunishment
+            return distanceReward
 
 
 class IsEnd:
@@ -71,28 +102,11 @@ class IsEnd:
         self.wolfID = wolfID
 
     def __call__(self, minDis):
-        sheepCoordinates = self.state(self.sheepID)
-        wolfCoordinates = self.state(self.wolfID)
+        sheepCoordinates = self.state[self.sheepID]
+        wolfCoordinates = self.state[self.wolfID]
         if computeDistance(sheepCoordinates, wolfCoordinates) <= minDis:
             return True
         else:
             return False
 
-# if __name__ == "__main__":
-#     movingRange = [0, 0, 15, 15]
-#     speedList = [5, 3, 3]
-#     statesList = [[10, 10, 0, 0], [10, 5, 0, 0], [15, 15, 0, 0]]
-#     currentStates = pd.DataFrame(statesList, index=[0, 1, 2], columns=[
-#         'positionX', 'positionY', 'velocityX', 'velocityY'])
-#     currentActions = [[0, 3], [0, 3], [3, 0]]
-#     transState = Transition(movingRange, speedList)
-#     newStates = transState(currentStates, currentActions)
-#     memory = deque(maxlen=20000)
-#     print(currentStates)
-#     print(currentActions)
-#     print(newStates)
-#     print(renormalVector((5, 5), 8))
-
-
-#     minibatch = random.sample(memory, batch_size)
-
+# minibatch = random.sample(memory, batch_size)
